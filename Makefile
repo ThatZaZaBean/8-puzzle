@@ -13,10 +13,10 @@ INCLUDE =
 MAIN_OUT = puzzle
 
 ## Requirements for each command
-MAIN_REQS = 8_puzzle.cpp 8_puzzle.h
+MAIN_REQS = 8_puzzle.cpp
 
 ## Targets to compile for each command
-MAIN_TARGETS = 8_puzzle.cpp 8_puzzle.h
+MAIN_TARGETS = 8_puzzle.cpp
 
 all: main
 

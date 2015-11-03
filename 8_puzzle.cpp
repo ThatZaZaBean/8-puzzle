@@ -5,6 +5,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <ctime>
 
 using namespace std;
 
@@ -14,15 +15,17 @@ class puzzle{
 	int t_val;	
 
 	public:
-		int sol_depth;
-		int h_val;
-		pair<int, int> zero_pos;
+		int sol_depth;	// Current depth in the tree
+		int h_val;		// Current heuristic value
+		int h_type;		// Stores type of heuristic
+		int lm;			// The last move the puzzle made
+		pair<int, int> zero_pos;	// Location of zero, updated at all points
+		int sol_type;	// used for determining heuristic to be used
 
 		puzzle(){
 			zero_pos = make_pair(2, 2);
 			h_val = sol_depth = 0;
 			t_val = numeric_limits<int>::max();
-
 		};
 		void set_v() {	// sets start state from user input
 			int input;
@@ -37,9 +40,7 @@ class puzzle{
 			}
 		}
 		void print();
-		void set_state();
 		void set_default();	// Set puzzle to default
-		void find_zero();	// Stores current "blank" position in zero_pos, might not need
 		bool is_equal(puzzle X);	// mostly just to compare to goal
 
 		// Puzzle movement functions
@@ -49,10 +50,11 @@ class puzzle{
 		void move_down();
 
 		int get_t_val();
-		void set_t_val();
-		void calc_md();		// Returns the Manhattan distance for a given problem.
+		void set_t_val();	// Calculates h(n) + g(n)
+		int  calc_md();		// Returns the Manhattan distance for a given problem.
+		int  calc_mt();		// Returns the Misplaced Tile val for a given problem.
 		puzzle a_star();	// Runs the algorithm
-		//vector<int> moves;	// list of moves made
+		vector<int> moves;	// list of moves made
 
 };
 // Priority Queue comparator. Hopefully sorts by lowest g(n) + h(n) cost QQ
@@ -64,7 +66,7 @@ class Compare {
 };
 
 puzzle a_star();
-puzzle Goal; bool found = false;
+puzzle Goal;
 priority_queue<puzzle, vector<puzzle>, Compare> open_states;
 vector <puzzle> closed_states;
 
@@ -77,32 +79,40 @@ int main(int argc, char* argv[]) {
 	puzzle start;
 	Goal.set_default();	
 	start.set_v();
+	cout << endl << "Enter the type of search you want:\n" << "1. Uniform Cost 2. Misplaced Tile 3. Manhattan Distance\n";
+	cin >> start.h_type;
 
+	clock_t begin = clock();
 	open_states.push(start);
 	puzzle sol = start.a_star();
-	cout << endl;
+	clock_t end = clock();	
+	
+	double tot_time = double(end - begin) / CLOCKS_PER_SEC;
+	cout << "Puzzle solved in " << tot_time << " seconds\n";
+	start.print();
+
+	for (int i = 0; i < sol.moves.size(); i++)  // Takes moves list from
+	{                                           // solution and applies it
+		if (sol.moves[i] == 1){					// to the start position
+			start.move_right();					// so that sol is viewable 
+			start.print();
+		}
+		if (sol.moves[i] == 2) {
+			start.move_left();
+			start.print();
+		}
+		if (sol.moves[i] == 3) {
+			start.move_up();
+			start.print();
+		}
+		if (sol.moves[i] == 4) {
+			start.move_down();
+			start.print();
+		}
+		cout << endl;
+	}
 	sol.print();
-	/*for (int i = 0; i < sol.moves.size(); i++)
-	{
-			 
-			 if (sol.moves[i] == 1){
-				sol.move_right();
-				sol.print();
-			 }
-			 if (sol.moves[i] == 2) {
-				 sol.move_left();
-				 sol.print();
-			 }
-			 if (sol.moves[i] == 3) {
-				 sol.move_up();
-				 sol.print();
-			 }
-			 if (sol.moves[i] == 4) {
-				 sol.move_down();
-				 sol.print();
-			 }
-			 cout << endl;  
-	 }*/
+	cout << endl;
 }
 void puzzle::set_default() {
 	 v[0][0] = 1;  v[0][1] = 2;  v[0][2] = 3;
@@ -112,8 +122,16 @@ void puzzle::set_default() {
 int puzzle::get_t_val() {
 	return t_val;
 }
+// Sets total weight based on the desired heuristic
 void puzzle::set_t_val() {
-	t_val = h_val + sol_depth;
+	if (h_type == 1) {
+		t_val = sol_depth;
+	}
+	else if (h_type == 2) {
+		t_val = calc_mt() + sol_depth;
+	}
+	else
+		t_val = calc_md() + sol_depth;
 }
 
 /* 
@@ -182,7 +200,7 @@ void puzzle::move_down() {
 }
 
 // Calculates the manhattan distance for a given map
-void puzzle::calc_md() {
+int puzzle::calc_md() {
 	int total = 0, true_x, true_y, curr_val;
 
 	for (int y = 0; y < 3; y++)
@@ -197,7 +215,14 @@ void puzzle::calc_md() {
 			}
 		}
 	}
-	h_val = total;
+	return total;
+}
+
+// Calculates the misplaced tiles value for a given map
+int puzzle::calc_mt() {
+	return ((v[0][0] != 1) + (v[0][1] != 2) + (v[0][2] != 3)	// A very lazy and easy way to tell if 
+		+ (v[1][0] != 4) + (v[1][1] != 5) + (v[1][2] != 6)		// the states are in their goal positions
+		+ (v[2][0] != 7) + (v[2][1] != 8));
 }
 
 bool puzzle::is_equal(puzzle X) { // might be too simple	
@@ -207,14 +232,6 @@ bool puzzle::is_equal(puzzle X) { // might be too simple
 		&& (v[2][0] == X.v[2][0]) && (v[2][1] == X.v[2][1]) && (v[2][2] == X.v[2][2]))
 		return true;
 	return false;
-}
-
-
-void puzzle::find_zero() {	// might not need
-
-}
-void puzzle::set_state(){
-
 }
 
 void puzzle::print() {
@@ -231,51 +248,47 @@ void puzzle::print() {
 
 puzzle puzzle::a_star() {
 	puzzle p;
-	while (!found) {
+	while (true) {
 		p = open_states.top();
 		open_states.pop();
 		// Found the end, we done boiz
 		if (p.is_equal(Goal)) {
-			cout << "We did it!\n"<< p.sol_depth << endl;
-			p.print();
+			cout << "We did it! Solution found at depth "<< p.sol_depth << "!" << endl;
+			cout << "Ending queue size " << closed_states.size() << endl;
 			return p;
 		}
 		else {
 			// Update costs
 			p.sol_depth = p.sol_depth + 1;
-			p.calc_md(); p.set_t_val();
+			p.moves.push_back(p.lm);	// Stores the last move made
+			//p.calc_md();
+			p.set_t_val();
 			closed_states.push_back(p);
 
 			if (p.zero_pos.first < 2){	// Can move left
 				p.move_right();
-				//moves.push_back(1);
+				p.lm = 1;
 				open_states.push(p);
-				//moves.pop_back();
 				p.move_left();
 			}
 			if (p.zero_pos.first > 0){	// Can move left
 				p.move_left();
-				//moves.push_back(2);
+				p.lm = 2;
 				open_states.push(p);
-				//moves.pop_back();
 				p.move_right();
 			}
 			if (p.zero_pos.second > 0){	// Can move up
 				p.move_up();
-				//moves.push_back(3);
+				p.lm = 3;
 				open_states.push(p);
-				//moves.pop_back();
 				p.move_down();
 			}
 			if (p.zero_pos.second < 2){	// Can move down
 				p.move_down();
-				//moves.push_back(4);
+				p.lm = 4;
 				open_states.push(p);
-				//moves.pop_back();
 				p.move_up();
 			}			
-		}		
+		}
 	}
-	p.print();
-	return p;
 }
