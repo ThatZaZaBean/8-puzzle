@@ -55,6 +55,8 @@ class puzzle{
 		int  calc_mt();		// Returns the Misplaced Tile val for a given problem.
 		puzzle a_star();	// Runs the algorithm
 		vector<int> moves;	// list of moves made
+		vector<int> h_moves;	// list of h_val at move location
+		vector<int> g_moves;	// list of g_val at move location
 
 };
 // Priority Queue comparator. Hopefully sorts by lowest g(n) + h(n) cost QQ
@@ -74,12 +76,12 @@ int main(int argc, char* argv[]) {
 	// Used for assigning problem size
 	//cout << "Enter the size of the puzzle (i.e 4 for 4x4):";
 	int size;// cin >> size;
-	cout << "Enter numbers in x y z format followed by enter" << endl;
+	cout << "Enter numbers in x y z format followed by enter three times.\n Or enter all numbers at once with spaces in between!\n Represent a blank space with 0!" << endl;
 
 	puzzle start;
 	Goal.set_default();	
 	start.set_v();
-	cout << endl << "Enter the type of search you want:\n" << "1. Uniform Cost 2. Misplaced Tile 3. Manhattan Distance\n";
+	cout << endl << "Enter the type of search you want:\n" << " 1. Uniform Cost\n 2. A* w/ Misplaced Tile\n 3. A* w/ Manhattan Distance\n";
 	cin >> start.h_type;
 
 	clock_t begin = clock();
@@ -89,30 +91,39 @@ int main(int argc, char* argv[]) {
 	
 	double tot_time = double(end - begin) / CLOCKS_PER_SEC;
 	cout << "Puzzle solved in " << tot_time << " seconds\n";
+	cout << "Steps displayed below\n\n";
 	start.print();
 
 	for (int i = 0; i < sol.moves.size(); i++)  // Takes moves list from
 	{                                           // solution and applies it
-		if (sol.moves[i] == 1){					// to the start position
-			start.move_right();					// so that sol is viewable 
+		if (sol.moves[i] == 1){					// to the start position // so that sol is viewable 
+			start.move_right();
+			cout << "The best state to expand with a g(n) = " << sol.g_moves[i] << " and h(n) = " << sol.h_moves[i] << " is...\n";
 			start.print();
+			cout << "Expanding this node!\n";
 		}
 		if (sol.moves[i] == 2) {
 			start.move_left();
+			cout << "The best state to expand with a g(n) = " << sol.g_moves[i] << " and h(n) = " << sol.h_moves[i] << " is...\n";
 			start.print();
+			cout << "Expanding this node!\n";
 		}
 		if (sol.moves[i] == 3) {
 			start.move_up();
+			cout << "The best state to expand with a g(n) = " << sol.g_moves[i] << " and h(n) = " << sol.h_moves[i] << " is...\n";
 			start.print();
+			cout << "Expanding this node!\n";
 		}
 		if (sol.moves[i] == 4) {
 			start.move_down();
+			cout << "The best state to expand with a g(n) = " << sol.g_moves[i] << " and h(n) = " << sol.h_moves[i] << " is...\n";
 			start.print();
+			cout << "Expanding this node!\n";
 		}
 		cout << endl;
 	}
 	sol.print();
-	cout << endl;
+	cout << endl << "Goal!" << endl;
 }
 void puzzle::set_default() {
 	 v[0][0] = 1;  v[0][1] = 2;  v[0][2] = 3;
@@ -126,12 +137,16 @@ int puzzle::get_t_val() {
 void puzzle::set_t_val() {
 	if (h_type == 1) {
 		t_val = sol_depth;
+		h_moves.push_back(0);
 	}
 	else if (h_type == 2) {
 		t_val = calc_mt() + sol_depth;
+		h_moves.push_back(t_val - sol_depth);
 	}
-	else
+	else {
 		t_val = calc_md() + sol_depth;
+		h_moves.push_back(t_val - sol_depth);
+	}
 }
 
 /* 
@@ -240,7 +255,9 @@ void puzzle::print() {
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			cout << v[i][j] << " ";
+			if (v[i][j] != 0)
+				cout << v[i][j] << " ";
+			else cout << "b ";
 		}
 		cout << endl;
 	}
@@ -261,15 +278,15 @@ puzzle puzzle::a_star() {
 			// Update costs
 			p.sol_depth = p.sol_depth + 1;
 			p.moves.push_back(p.lm);	// Stores the last move made
-			//p.calc_md();
+			p.g_moves.push_back(p.sol_depth);
 			p.set_t_val();
 			closed_states.push_back(p);
 
 			if (p.zero_pos.first < 2){	// Can move left
-				p.move_right();
-				p.lm = 1;
-				open_states.push(p);
-				p.move_left();
+				p.move_right();			// Since I neglected to use pointers
+				p.lm = 1;				// I have to move the map's position
+				open_states.push(p);	// back after pushing it onto the
+				p.move_left();			// queue, else states aren't correct
 			}
 			if (p.zero_pos.first > 0){	// Can move left
 				p.move_left();
