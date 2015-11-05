@@ -69,6 +69,7 @@ class Compare {
 
 puzzle a_star();
 puzzle Goal;
+int nodes_expanded = 0;
 priority_queue<puzzle, vector<puzzle>, Compare> open_states;
 vector <puzzle> closed_states;
 
@@ -91,6 +92,7 @@ int main(int argc, char* argv[]) {
 	
 	double tot_time = double(end - begin) / CLOCKS_PER_SEC;
 	cout << "Puzzle solved in " << tot_time << " seconds\n";
+	cout << "Total nodes expanded " << nodes_expanded << endl;
 	cout << "Steps displayed below\n\n";
 	start.print();
 
@@ -287,24 +289,28 @@ puzzle puzzle::a_star() {
 				p.lm = 1;				// I have to move the map's position
 				open_states.push(p);	// back after pushing it onto the
 				p.move_left();			// queue, else states aren't correct
+				nodes_expanded++;		// Updates the total amount of nodes expanded
 			}
 			if (p.zero_pos.first > 0){	// Can move left
 				p.move_left();
 				p.lm = 2;
 				open_states.push(p);
 				p.move_right();
+				nodes_expanded++;
 			}
 			if (p.zero_pos.second > 0){	// Can move up
 				p.move_up();
 				p.lm = 3;
 				open_states.push(p);
 				p.move_down();
+				nodes_expanded++;
 			}
 			if (p.zero_pos.second < 2){	// Can move down
 				p.move_down();
 				p.lm = 4;
 				open_states.push(p);
 				p.move_up();
+				nodes_expanded++;
 			}			
 		}
 	}
